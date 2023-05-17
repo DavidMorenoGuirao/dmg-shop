@@ -1,125 +1,108 @@
-import { PeopleOutline } from "@mui/icons-material";
-import { AdminLayout } from "../../components/layouts";
-
-import {
-  DataGrid,
-  GridColDef,
-  GridValueGetterParams,
-  GridRenderCellParams,
-} from "@mui/x-data-grid";
-import Grid from "@mui/material/Grid";
+import React, { useEffect, useState } from "react";
+import { NextPage } from "next";
 import useSWR from "swr";
-import { IUser } from "../../interfaces/user";
-import { Select } from "@mui/material";
-import MenuItem from "@mui/material/MenuItem";
-import { dmgApi } from "../../api";
-import { useState, useEffect } from "react";
 
-const UserPage = () => {
-  const { data, error } = useSWR<IUser[]>("/api/admin/users");
+import Grid from "@mui/material/Grid";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import PeopleOutline from "@mui/icons-material/PeopleOutline";
+import { DataGrid, GridColDef, GridValueGetterParams } from "@mui/x-data-grid";
+
+import AdminLayout from "../../components/layouts/AdminLayout";
+import { IUser, Role } from "../../interfaces/user";
+import dmgApi from "../../api/dmgApi";
+
+//
+const validRoles = [
+  {
+    value: "client",
+    label: "Cliente",
+  },
+  {
+    value: "admin",
+    label: "Administrador",
+  },
+];
+
+const UsersPage: NextPage = () => {
+  const { data = [], error } = useSWR<IUser[]>("/api/admin/users");
   const [users, setUsers] = useState<IUser[]>([]);
 
   useEffect(() => {
-    if (data) {
-      setUsers(data);
-    }
+    setUsers(data);
   }, [data]);
 
   if (!data && !error) return <></>;
 
-  const onRoleUpdated = async (userId: string, newRole: string) => {
-    const previusUsers = users.map((user) => ({ ...user }));
-    const updatedUsers = users.map((user) => ({
-      ...user,
-      role: user._id === userId ? newRole : user.role,
-    }));
-
-    // colocandolo aqui se actualiza en el front inmediatamente
-    setUsers(updatedUsers);
-
+  const onRoleUpdated = async (userId: number | string, newRole: Role) => {
     try {
-      await dmgApi.put("/admin/users", { userId, role: newRole });
+      await dmgApi.put("/admin/users", {
+        userId,
+        role: newRole,
+      });
+      const updatedUsers = users.map((user) => ({
+        ...user,
+        role: user._id === userId ? newRole : user.role,
+      }));
+      setUsers(updatedUsers);
     } catch (error) {
-      setUsers(previusUsers);
-      console.log(error);
-      alert("Error al actualizar el rol del usuario");
+      alert("No se pudo actualizar el rol del usuario");
     }
   };
 
-  const colums: GridColDef[] = [
-    { field: "email", headerName: "correo", width: 250 },
-    { field: "name", headerName: "Nombre completo", width: 300 },
+  const columns: GridColDef[] = [
+    {
+      field: "email",
+      headerName: "Correo",
+      width: 250,
+    },
+    {
+      field: "name",
+      headerName: "Nombre completo",
+      width: 300,
+    },
     {
       field: "role",
       headerName: "Rol",
       width: 300,
-      renderCell: (params: GridRenderCellParams) => {
+      // @ts-ignore
+      renderCell: ({ row }: GridValueGetterParams) => {
         return (
           <Select
-            value={params.row.role}
+            value={row.role}
             label="Rol"
+            onChange={(e) => onRoleUpdated(row.id, e.target.value)}
             sx={{ width: 300 }}
-            onChange={({ target }) =>
-              onRoleUpdated(params.row.id, target.value)
-            }
           >
-            <MenuItem value="admin">Admin</MenuItem>
-            <MenuItem value="client">Client</MenuItem>
-            <MenuItem value="colaborator">Colaborator</MenuItem>
-            <MenuItem value="SEO">SEO</MenuItem>
+            {validRoles.map((role) => (
+              <MenuItem value={role.value} key={role.value}>
+                {role.label}
+              </MenuItem>
+            ))}
           </Select>
         );
       },
     },
   ];
 
-  // const colums: GridColDef[] = [
-  //   { field: "email", headerName: "correo", width: 250 },
-  //   { field: "name", headerName: "Nombre completo", width: 300 },
-  //   {
-  //     field: "role",
-  //     headerName: "Rol",
-  //     width: 300,
-  //     renderCell: ({ row }: GridValueGetterParams) => {
-  //       return (
-  //         <Select
-  //           value={row.role}
-  //           label="Rol"
-  //           sx={{ width: 300 }}
-  //           onChange={({ target }) => onRoleUpdated(row.id, target.value)}
-  //         >
-  //           <MenuItem value="admin">Admin</MenuItem>
-  //           <MenuItem value="client">Client</MenuItem>
-  //           <MenuItem value="colaborator">Colaborator</MenuItem>
-  //           <MenuItem value="SEO">SEO</MenuItem>
-  //         </Select>
-  //       );
-  //     },
-  //   },
-  // ];
-
-  const rows = users.map((user) => ({
-    id: user._id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
+  const rows = users.map(({ _id, email, name, role }) => ({
+    id: _id,
+    email,
+    name,
+    role,
   }));
 
   return (
     <AdminLayout
       title={"Usuarios"}
-      subTitle={"Mantenimiento de usuarios"}
+      subTitle={"Manteniemiento de usuarios"}
       icon={<PeopleOutline />}
     >
-      <Grid container className="fadeIn" p={4}>
-        <Grid
-          item
-          xs={12}
-          sx={{ height: 650, width: "100%", justifyContent: "center" }}
-        >
+      <Grid container className="fadeIn">
+        <Grid item xs={12} sx={{ height: 650, width: "100%" }}>
           <DataGrid
             rows={rows}
-            columns={colums}
+            columns={columns}
             pageSize={10}
             rowsPerPageOptions={[10]}
           />
@@ -129,4 +112,4 @@ const UserPage = () => {
   );
 };
 
-export default UserPage;
+export default UsersPage;

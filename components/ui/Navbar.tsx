@@ -18,12 +18,12 @@ import Typography from "@mui/material/Typography";
 import ClearOutlined from "@mui/icons-material/ClearOutlined";
 import SearchOutlined from "@mui/icons-material/SearchOutlined";
 import ShoppingCartOutlined from "@mui/icons-material/ShoppingCartOutlined";
-
-import { CartContext, UiContext } from "../../context";
+import { UiContext } from "../../context/ui/UiContext";
+import { CartContext } from "../../context/cart/CartContext";
 
 export const Navbar = () => {
   const { asPath, push } = useRouter();
-  const { toggleSidebar } = useContext(UiContext);
+  const { toggleSideMenu } = useContext(UiContext);
   const { numberOfItems } = useContext(CartContext);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -125,7 +125,7 @@ export const Navbar = () => {
         {/* Para pantallas pequeñas */}
         <IconButton
           sx={{ display: { xs: "flex", sm: "none" } }}
-          onClick={toggleSidebar}
+          onClick={toggleSideMenu}
         >
           <SearchOutlined />
         </IconButton>
@@ -143,7 +143,7 @@ export const Navbar = () => {
           </MuiLink>
         </NextLink>
 
-        <Button onClick={toggleSidebar}>Menu</Button>
+        <Button onClick={toggleSideMenu}>Menu</Button>
       </Toolbar>
     </AppBar>
   );

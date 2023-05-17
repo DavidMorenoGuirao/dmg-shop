@@ -1,15 +1,15 @@
 import { PropsWithChildren, FC } from "react";
 import Head from "next/head";
-
 import { Navbar, SideMenu } from "../ui";
 
+//
 interface Props {
   title: string;
   pageDescription: string;
   imageFullUrl?: string;
 }
 
-export const ShopLayout: FC<PropsWithChildren<Props>> = ({
+const ShopLayout: FC<PropsWithChildren<Props>> = ({
   children,
   title,
   pageDescription,
@@ -41,3 +41,5 @@ export const ShopLayout: FC<PropsWithChildren<Props>> = ({
     </>
   );
 };
+
+export default ShopLayout;

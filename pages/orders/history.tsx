@@ -1,54 +1,62 @@
+import React from "react";
 import { GetServerSideProps, NextPage } from "next";
-// import { Chip, Grid, Link, Typography } from "@mui/material";
+
 import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
-
-import { ShopLayout } from "../../components/layouts";
-
-import {
-  DataGrid,
-  GridColDef,
-  GridValueGetterParams,
-  GridRenderCellParams,
-} from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridValueGetterParams } from "@mui/x-data-grid";
 
 import NextLink from "next/link";
-import { getSession } from "next-auth/react";
-import { dbOrders } from "../../database";
-import { IOrder } from "../../interfaces";
+import ShopLayout from "../../components/layouts/ShopLayout";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../api/auth/[...nextauth]";
+import { getOrdersByUser } from "../../database/dbOrders";
+import { IOrder } from "../../interfaces/order";
 
-const colums: GridColDef[] = [
-  { field: "id", headerName: "ID", width: 100 },
-  { field: "fullname", headerName: "Nombre Completo", width: 300 },
-
+const columns: GridColDef[] = [
+  {
+    field: "id",
+    headerName: "ID",
+    width: 100,
+  },
+  {
+    field: "fullname",
+    headerName: "Nombre Completo",
+    width: 300,
+  },
   {
     field: "paid",
-    headerName: "Pagado",
-    width: 170,
-
-    description: "Muestra la informacion soibre si esta pagado o no",
-    renderCell: (params: GridRenderCellParams) => {
-      return params.row.paid ? (
-        <Chip color="success" label="Pagada" variant="outlined" />
-      ) : (
-        <Chip color="error" label="No pagada" variant="outlined" />
+    headerName: "Pagada",
+    description: "Muestra informacion si esta pagada la orden o no",
+    width: 200,
+    // @ts-ignore
+    renderCell: (params: GridValueGetterParams) => {
+      return (
+        <>
+          {params.row.paid ? (
+            <Chip color="success" label="Pagada" variant="outlined" />
+          ) : (
+            <Chip color="error" label="No Pagada" variant="outlined" />
+          )}
+        </>
       );
     },
   },
-
   {
-    field: "link",
-    headerName: "Ver pedido",
-    width: 100,
-
-    description: "Muestra un link para ver la orden",
+    field: "orderId",
+    headerName: "Ver orden",
+    width: 200,
     sortable: false,
-    renderCell: (params: GridRenderCellParams) => {
+    // @ts-ignore
+    renderCell: (params: GridValueGetterParams) => {
       return (
-        <NextLink href={`/orders/${params.row.orderId}`} passHref>
-          <Link underline="always">Ver orden</Link>
+        <NextLink
+          href={`/orders/${params.row.orderId}`}
+          passHref
+          legacyBehavior
+        >
+          <Link underline="always">Ver Orden</Link>
         </NextLink>
       );
     },
@@ -60,31 +68,24 @@ interface Props {
 }
 
 const HistoryPage: NextPage<Props> = ({ orders }) => {
-  const rows = orders.map((order, idx) => ({
-    id: idx + 1,
-    paid: order.isPaid,
-    fullname: `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`,
-    orderId: order._id,
+  const orderData = orders.map(({ _id, isPaid, shippingAddress }, index) => ({
+    id: index + 1,
+    paid: isPaid,
+    fullname: `${shippingAddress.firstName} ${shippingAddress.lastName}`,
+    orderId: _id,
   }));
 
   return (
-    <ShopLayout
-      title={"Historial de ordenes"}
-      pageDescription={"Historial de ordenes del cliente"}
-    >
+    <ShopLayout title="Historial" pageDescription="Historial de ordenes">
       <Typography variant="h1" component="h1">
         Historial de ordenes
       </Typography>
 
-      <Grid container className="fadeIn" p={4}>
-        <Grid
-          item
-          xs={12}
-          sx={{ height: 650, width: "100%", justifyContent: "center" }}
-        >
+      <Grid container className="fadeIn">
+        <Grid item xs={12} sx={{ height: 650, width: "100%" }}>
           <DataGrid
-            rows={rows}
-            columns={colums}
+            rows={orderData}
+            columns={columns}
             pageSize={10}
             rowsPerPageOptions={[10]}
           />
@@ -94,27 +95,22 @@ const HistoryPage: NextPage<Props> = ({ orders }) => {
   );
 };
 
-// You should use getServerSideProps when:
-// - Only if you need to pre-render a page whose data must be fetched at request time
-
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  const session: any = await getSession({ req });
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
     return {
       redirect: {
-        destination: `/auth/login?p=/orders/history`,
+        destination: "/auth/login?p=/orders/history",
         permanent: false,
       },
     };
   }
 
-  const orders = await dbOrders.getOrderByUser(session.user._id);
+  const orders = await getOrdersByUser(session.user._id);
 
   return {
-    props: {
-      orders,
-    },
+    props: { orders },
   };
 };
 

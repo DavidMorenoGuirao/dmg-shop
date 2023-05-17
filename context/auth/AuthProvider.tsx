@@ -1,14 +1,12 @@
-import { FC, ReactNode, useEffect, useReducer } from "react";
-import { useRouter } from "next/router";
+import { FC, useReducer, useEffect, PropsWithChildren } from "react";
 import Cookies from "js-cookie";
 import axios from "axios";
-
+import { IUser } from "../../interfaces/user";
+import { authReducer } from "./authReducer";
+import dmgApi from "../../api/dmgApi";
+import { AuthContext } from "./AuthContext";
 import { useSession, signOut } from "next-auth/react";
-
-import { AuthContext, authReducer } from "./";
-
-import { IUser } from "../../interfaces";
-import { dmgApi } from "../../api";
+// import { useRouter } from 'next/router';
 
 export interface AuthState {
   isLoggedIn: boolean;
@@ -20,37 +18,37 @@ const AUTH_INITIAL_STATE: AuthState = {
   user: undefined,
 };
 
-interface Props {
-  children: ReactNode;
-}
-
-export const AuthProvider: FC<Props> = ({ children }) => {
+export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, AUTH_INITIAL_STATE);
-  const router = useRouter();
   const { data, status } = useSession();
+
+  // Autenticacion personalizada
+  // const router = useRouter();
+
+  // useEffect(() => {
+  //   checkToken();
+  // }, []);
+
+  // const checkToken = async () => {
+  //   if (!Cookies.get('token')) return;
+  //   try {
+  //     const { data } = await tesloApi.get('/user/validate-token');
+  //     const { token, user } = data;
+  //     Cookies.set('token', token);
+  //     dispatch({ type: '[Auth] - Login', payload: user });
+  //   } catch (error) {
+  //     Cookies.remove('token');
+  //   }
+  // };
 
   useEffect(() => {
     if (status === "authenticated") {
-      // console.log({user: data?.user});
-      dispatch({ type: "Auth - Login", payload: data?.user as IUser });
+      dispatch({
+        type: "Auth - Login",
+        payload: data?.user as IUser,
+      });
     }
   }, [status, data]);
-
-  const checkToken = async () => {
-    if (!Cookies.get("token")) {
-      //con este if preguntamos si tenemos cookie, y sino tuvieramos, nos ahorramos el checkeo de token
-      return;
-    }
-
-    try {
-      const { data } = await dmgApi.get("/user/validate-token");
-      const { token, user } = data;
-      Cookies.set("token", token);
-      dispatch({ type: "Auth - Login", payload: user });
-    } catch (error) {
-      Cookies.remove("token");
-    }
-  };
 
   const loginUser = async (
     email: string,
@@ -86,16 +84,15 @@ export const AuthProvider: FC<Props> = ({ children }) => {
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        const { message } = error.response?.data as { message: string };
         return {
           hasError: true,
-          message,
+          message: error.response?.data.message,
         };
       }
 
       return {
         hasError: true,
-        message: "Error al registrar usuario",
+        message: "No se pudo crear el usuario - intente de nuevo",
       };
     }
   };
@@ -110,11 +107,7 @@ export const AuthProvider: FC<Props> = ({ children }) => {
     Cookies.remove("city");
     Cookies.remove("country");
     Cookies.remove("phone");
-
     signOut();
-
-    // Cookies.remove('token');
-    // router.reload();
   };
 
   return (
@@ -122,7 +115,7 @@ export const AuthProvider: FC<Props> = ({ children }) => {
       value={{
         ...state,
 
-        //Methods
+        // Methods
         loginUser,
         registerUser,
         logout,

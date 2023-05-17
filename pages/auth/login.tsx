@@ -1,62 +1,98 @@
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { GetServerSideProps } from "next";
-import { useRouter } from "next/router";
+import {
+  NextPage,
+  // ,GetServerSideProps
+} from "next";
 import NextLink from "next/link";
-import { getSession, signIn, getProviders } from "next-auth/react";
+import { useRouter } from "next/router";
+
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import ErrorOutline from "@mui/icons-material/ErrorOutline";
-import { AuthLayout } from "../../components/layouts";
-import { validations } from "../../utils";
+import GoogleIcon from "@mui/icons-material/Google";
+import GitHubIcon from "@mui/icons-material/GitHub";
 
+import AuthLayout from "../../components/layouts/AuthLayout";
+import { useForm } from "react-hook-form";
+import { isEmail } from "../../utils/validations";
+import { signIn, getProviders } from "next-auth/react";
+// import { unstable_getServerSession } from 'next-auth/next';
+// import { authOptions } from '../api/auth/[...nextauth]';
+
+//
 type FormData = {
   email: string;
   password: string;
 };
 
-const LoginPage = () => {
-  const router = useRouter();
+type ProviderType = "github" | "google";
 
+const LoginPage: NextPage = () => {
+  const router = useRouter();
+  // Login personalizado
+  //  const { loginUser } = useContext(AuthContext);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>();
   const [showError, setShowError] = useState(false);
-
   const [providers, setProviders] = useState<any>({});
+  const destination = router.query.p?.toString();
+
+  const onLoginUser = async ({ email, password }: FormData) => {
+    setShowError(false);
+
+    // Login next-auth
+    await signIn("credentials", {
+      email,
+      password,
+    });
+
+    // Login personalizado
+    // const isValidLogin = await loginUser(email, password);
+    // if (!isValidLogin) {
+    //   setShowError(true);
+    //   setTimeout(() => setShowError(false), 3000);
+    //   return;
+    // }
+    // router.replace(destination || '/');
+  };
+
+  const getIconByProvider = (provider: ProviderType) => {
+    switch (provider) {
+      case "github":
+        return <GitHubIcon />;
+      case "google":
+        return <GoogleIcon />;
+      default:
+        return null;
+    }
+  };
 
   useEffect(() => {
     getProviders().then((prov) => {
-      // console.log(prov);
       setProviders(prov);
     });
   }, []);
 
-  const onLoginUser = ({ email, password }: FormData) => {
-    setShowError(false);
-
-    signIn("credentials", { email, password });
-  };
-
   return (
-    <AuthLayout title={"Ingresar"}>
+    <AuthLayout title="Ingresar">
       <form onSubmit={handleSubmit(onLoginUser)} noValidate>
         <Box sx={{ width: 350, padding: "10px 20px" }}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <Typography variant="h1" component="h1">
-                Iniciar Sesión
+                Iniciar Sesion
               </Typography>
               <Chip
-                label="Email o contraseña incorrectos"
+                label="No reconocemos ese usuario / password"
                 color="error"
                 icon={<ErrorOutline />}
                 className="fadeIn"
@@ -72,25 +108,22 @@ const LoginPage = () => {
                 fullWidth
                 {...register("email", {
                   required: "Este campo es requerido",
-                  validate: validations.isEmail,
+                  validate: isEmail,
                 })}
-                error={!!errors.email} //erros.email es un objeto, para poder pasarlo como booleano le ponemos la doble negacion al principio
+                error={!!errors.email}
                 helperText={errors.email?.message}
               />
             </Grid>
 
             <Grid item xs={12}>
               <TextField
-                label="Contraseña"
                 type="password"
+                label="Password"
                 variant="filled"
                 fullWidth
                 {...register("password", {
                   required: "Este campo es requerido",
-                  minLength: {
-                    value: 6,
-                    message: "La contraseña debe tener al menos 6 caracteres",
-                  },
+                  minLength: { value: 6, message: "Minimo 6 caracteres" },
                 })}
                 error={!!errors.password}
                 helperText={errors.password?.message}
@@ -109,50 +142,35 @@ const LoginPage = () => {
               </Button>
             </Grid>
 
-            <Grid item xs={12} display="flex" justifyContent="end">
+            <Grid item xs={12} display="flex" justifyContent="center">
               <NextLink
-                href={
-                  router.query.p
-                    ? `/auth/register?p=${router.query.p}`
-                    : "/auth/register"
-                }
+                href={`/auth/register${destination && `?p=${destination}`}`}
                 passHref
+                legacyBehavior
               >
-                <Link
-                  variant="body2"
-                  color="textSecondary"
-                  component="a"
-                  underline="always"
-                >
-                  ¿No tienes una cuenta? Regístrate
-                </Link>
+                <Link variant="body2">no tienes cuenta?</Link>
               </NextLink>
             </Grid>
 
-            <Grid
-              item
-              xs={12}
-              display="flex"
-              flexDirection={"column"}
-              justifyContent="end"
-            >
+            <Grid item xs={12} display="flex" flexDirection="column">
               <Divider sx={{ width: "100%", mb: 2 }} />
-              {Object.values(providers)
-                .filter((provider: any) => provider.id !== "credentials")
-                .map((provider: any) => {
-                  return (
-                    <Button
-                      key={provider.id}
-                      variant="outlined"
-                      fullWidth
-                      color="primary"
-                      sx={{ mb: 1 }}
-                      onClick={() => signIn(provider.id)}
-                    >
-                      {provider.name}
-                    </Button>
-                  );
-                })}
+              {Object.values(providers)?.map((provider: any) => {
+                if (provider.id === "credentials")
+                  return <div key="credentials"></div>;
+                return (
+                  <Button
+                    key={provider.id}
+                    variant="outlined"
+                    startIcon={getIconByProvider(provider.id)}
+                    fullWidth
+                    color="primary"
+                    sx={{ mb: 1 }}
+                    onClick={() => signIn(provider.id)}
+                  >
+                    {provider.name}
+                  </Button>
+                );
+              })}
             </Grid>
           </Grid>
         </Box>
@@ -161,27 +179,29 @@ const LoginPage = () => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async ({
-  req,
-  query,
-}) => {
-  const session = await getSession({ req });
-  // console.log({session});
+// Vamos a verificar si estamos logeados
+// Esta es la forma en como podemos verificar si ya estamos logeados con SSR
+// Ahora verificamos esto con un middleware
+// export const getServerSideProps: GetServerSideProps = async ({
+//   req,
+//   res,
+//   query,
+// }) => {
+//   const session = await unstable_getServerSession(req, res, authOptions);
+//   const { p = '/' } = query;
 
-  const { p = "/" } = query;
+//   if (session) {
+//     return {
+//       redirect: {
+//         destination: p.toString(),
+//         permanent: false,
+//       },
+//     };
+//   }
 
-  if (session) {
-    return {
-      redirect: {
-        destination: p.toString(),
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
-};
+//   return {
+//     props: {},
+//   };
+// };
 
 export default LoginPage;

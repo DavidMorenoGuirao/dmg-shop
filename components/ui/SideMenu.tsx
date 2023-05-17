@@ -27,12 +27,13 @@ import SearchOutlined from "@mui/icons-material/SearchOutlined";
 import VpnKeyOutlined from "@mui/icons-material/VpnKeyOutlined";
 import DashboardOutlined from "@mui/icons-material/DashboardOutlined";
 
-import { AuthContext, UiContext } from "../../context";
+import { AuthContext } from "../../context/auth/AuthContext";
+import { UiContext } from "../../context/ui/UiContext";
 import { ListItemButton } from "@mui/material";
 
 export const SideMenu = () => {
   const router = useRouter();
-  const { isMenuOpen, toggleSidebar } = useContext(UiContext);
+  const { isMenuOpen, toggleSideMenu } = useContext(UiContext);
   const { isLoggedIn, user, logout } = useContext(AuthContext);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -43,7 +44,7 @@ export const SideMenu = () => {
   };
 
   const navigateTo = (url: string) => {
-    toggleSidebar();
+    toggleSideMenu();
     router.push(url);
   };
 
@@ -62,7 +63,7 @@ export const SideMenu = () => {
     <Drawer
       open={isMenuOpen}
       anchor="right"
-      onClose={toggleSidebar}
+      onClose={toggleSideMenu}
       sx={{ backdropFilter: "blur(4px)", transition: "all 0.5s ease-out" }}
     >
       <Box sx={{ width: 250, paddingTop: 5 }}>
@@ -164,6 +165,13 @@ export const SideMenu = () => {
                   <DashboardOutlined />
                 </ListItemIcon>
                 <ListItemText primary={"Dashboard"} />
+              </ListItemButton>
+
+              <ListItemButton onClick={() => navigateTo("/admin/products")}>
+                <ListItemIcon>
+                  <CategoryOutlined />
+                </ListItemIcon>
+                <ListItemText primary={"Products"} />
               </ListItemButton>
 
               <ListItemButton onClick={() => navigateTo("/admin/orders")}>

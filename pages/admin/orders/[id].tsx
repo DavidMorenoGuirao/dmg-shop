@@ -1,162 +1,155 @@
+import React from "react";
 import { GetServerSideProps, NextPage } from "next";
+import NextLink from "next/link";
 
-import { IOrder } from "../../../interfaces";
-
-// import { Box, Card, CardContent, Divider, Grid, Typography, Link, Chip } from "@mui/material";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import Card from "@mui/material/Card";
-import Grid from "@mui/material/Grid";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import Grid from "@mui/material/Grid";
+import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
-
-import CreditCardOffOutlined from "@mui/icons-material/CreditCardOffOutlined";
 import CreditScoreOutlined from "@mui/icons-material/CreditScoreOutlined";
-import { CartList, OrderSummary } from "../../../components/cart";
-import { dbOrders } from "../../../database";
-import { AdminLayout } from "../../../components/layouts/AdminLayout";
-import { AirplaneTicketOutlined } from "@mui/icons-material";
+import CreditCardOff from "@mui/icons-material/CreditCardOff";
+
+import CartList from "../../../components/cart/CartList";
+import OrderSummary from "../../../components/cart/OrderSummary";
+import ShopLayout from "../../../components/layouts/ShopLayout";
+import { getOrderById } from "../../../database/dbOrders";
+import { IOrder } from "../../../interfaces/order";
+import countries from "../../../utils/countries";
+
+export type OrderResponseBody = {
+  id: string;
+  status:
+    | "COMPLETED"
+    | "SAVED"
+    | "APPROVED"
+    | "VOIDED"
+    | "PAYER_ACTION_REQUIRED";
+};
 
 interface Props {
   order: IOrder;
 }
 
 const OrderPage: NextPage<Props> = ({ order }) => {
-  const { shippingAddress } = order;
+  const { shippingAddress, numberOfItems, subTotal, tax, total } = order;
 
   return (
-    <AdminLayout
-      title="Resumen de orden"
-      subTitle={`OrdenId: ${order._id}`}
-      icon={<AirplaneTicketOutlined />}
+    <ShopLayout
+      title={`Resumen de la orden ${order._id}`}
+      pageDescription="Resumen de la orden"
     >
+      <Typography variant="h1" component="h1">
+        Orden {order._id}
+      </Typography>
+
       {order.isPaid ? (
         <Chip
-          sx={{ my: 6, mx: 2 }}
-          label="Orden Pagada"
+          sx={{ my: 2 }}
+          label="Orden pagada"
           variant="outlined"
           color="success"
           icon={<CreditScoreOutlined />}
         />
       ) : (
         <Chip
-          sx={{ my: 6, mx: 2 }}
-          label="Pendiente de pago"
+          sx={{ my: 2 }}
+          label="Pendiende de pago"
           variant="outlined"
           color="error"
-          icon={<CreditCardOffOutlined />}
+          icon={<CreditCardOff />}
         />
       )}
 
-      <Grid container className="fadeIn" p={2}>
+      <Grid container>
         <Grid item xs={12} sm={7}>
           <CartList products={order.orderItems} />
         </Grid>
+
         <Grid item xs={12} sm={5}>
           <Card className="summary-card">
             <CardContent>
-              <Typography variant="h2" component="h2">
+              <Typography variant="h2">
                 Resumen ({order.numberOfItems}{" "}
-                {order.numberOfItems < 2 ? "producto" : "productos"})
+                {order.numberOfItems > 1 ? "productos" : "producto"})
               </Typography>
               <Divider sx={{ my: 1 }} />
 
+              <Box display="flex" justifyContent="space-between" mt={1}>
+                <Typography variant="subtitle1">
+                  Direccion de entrega
+                </Typography>
+                <NextLink href="/checkout/address" passHref legacyBehavior>
+                  <Link underline="always">Editar</Link>
+                </NextLink>
+              </Box>
+
+              <Typography>{`${shippingAddress.firstName} ${shippingAddress.lastName}`}</Typography>
+              <Typography>{shippingAddress.address}</Typography>
+              {shippingAddress.address2 && (
+                <Typography>{shippingAddress.address2}</Typography>
+              )}
               <Typography>
-                {shippingAddress.firstName} {shippingAddress.lastName}
+                {shippingAddress.city} {shippingAddress.zip}
               </Typography>
               <Typography>
-                {shippingAddress.address}{" "}
-                {shippingAddress.address2
-                  ? `, ${shippingAddress.address2}`
-                  : ""}
+                {
+                  countries.find(({ code }) => code === shippingAddress.country)
+                    ?.name
+                }
               </Typography>
-              <Typography>
-                {shippingAddress.city}, {shippingAddress.zip}{" "}
-              </Typography>
-              <Typography>{shippingAddress.country}</Typography>
               <Typography>{shippingAddress.phone}</Typography>
 
               <Divider sx={{ my: 1 }} />
 
               <OrderSummary
-                orderValues={{
-                  numberOfItems: order.numberOfItems,
-                  subTotal: order.subTotal,
-                  total: order.total,
-                  tax: order.tax,
+                summaryData={{
+                  numberOfItems,
+                  subTotal,
+                  tax,
+                  total,
                 }}
               />
 
               <Box sx={{ mt: 3 }} display="flex" flexDirection="column">
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  {order.isPaid ? (
-                    <Chip
-                      sx={{ my: 2, flex: 1 }}
-                      label="Orden Pagada"
-                      variant="outlined"
-                      color="success"
-                      icon={<CreditScoreOutlined />}
-                    />
-                  ) : (
-                    <Chip
-                      sx={{ my: 6, mx: 2, flex: 1 }}
-                      label="Pendiente de pago"
-                      variant="outlined"
-                      color="error"
-                      icon={<CreditCardOffOutlined />}
-                    />
-                  )}
-                </Box>
+                {order.isPaid ? (
+                  <Chip
+                    sx={{ my: 2 }}
+                    label="Orden pagada"
+                    variant="outlined"
+                    color="success"
+                    icon={<CreditScoreOutlined />}
+                  />
+                ) : (
+                  <Chip
+                    sx={{ my: 2 }}
+                    label="Pendiende de pago"
+                    variant="outlined"
+                    color="error"
+                    icon={<CreditCardOff />}
+                  />
+                )}
               </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
-    </AdminLayout>
+    </ShopLayout>
   );
 };
 
-export default OrderPage;
-
-// You should use getServerSideProps when:
-// - Only if you need to pre-render a page whose data must be fetched at request time
-export const getServerSideProps: GetServerSideProps = async ({
-  req,
-  query,
-}) => {
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const { id = "" } = query;
+  const order = await getOrderById(id.toString());
 
-  //Validaciones
-  const order = await dbOrders.getOrderById(id.toString());
-
-  // Comprobar si la orden existe
   if (!order) {
     return {
       redirect: {
-        destination: "/admin/orders",
+        destination: `/admin/orders`,
         permanent: false,
-      },
-    };
-  }
-
-  // Comprobar si la orden tiene un usuario asociado
-  if (!order.user) {
-    console.error("La orden no tiene un usuario asociado");
-    return {
-      props: {
-        order: {
-          ...order,
-          user: {
-            email: "Email no disponible",
-            name: "Nombre no disponible",
-          },
-        },
       },
     };
   }
@@ -167,3 +160,5 @@ export const getServerSideProps: GetServerSideProps = async ({
     },
   };
 };
+
+export default OrderPage;

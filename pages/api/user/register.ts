@@ -1,86 +1,89 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import bcrypt from 'bcryptjs'
-import { db } from '../../../database'
-import { User } from '../../../models'
-import { jwt, validations } from '../../../utils'
-
+import type { NextApiRequest, NextApiResponse } from "next";
+import { connect, disconnect } from "../../../database/db";
+import User from "../../../models/User";
+import bcrypt from "bcryptjs";
+import { Role } from "../../../interfaces/user";
+import { singToken } from "../../../utils/jwt";
+import { isValidEmail } from "../../../utils/validations";
 
 type Data =
-| { message: string }
-| {
-    token: string;
-    user: {
+  | {
+      message: string;
+    }
+  | {
+      token: string;
+      user: {
         email: string;
+        role: Role;
         name: string;
-        role: string;
+      };
     };
+
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  switch (req.method) {
+    case "POST":
+      return registerUser(req, res);
+    default:
+      return res.status(400).json({
+        message: "Bad request",
+      });
+  }
 }
 
+const registerUser = async (
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) => {
+  const { name = "", email = "", password = "" } = req.body;
 
-export default function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-    
-    switch ( req.method ) {
-        case 'POST':
-            return registerUser(req, res)
-
-            default:
-                return res.status(400).json({ message: 'Bad request' })
-        
-        
-
-    }     
-}
-
-
-const registerUser = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
-    
-    const { email = '', password = '', name = ''} = req.body as { email: string, password: string, name: string };
-
-    await db.connect();
-    const user = await User.findOne({ email });
-    
-    if( user ) {
-        await db.disconnect();
-        return res.status(400).json({ message: 'Ese email ya esta registrado' })
-    }
-
-    if ( password.length < 6 ) {
-        return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' })
-    }
-
-    if ( name.length < 2 ) {
-        return res.status(400).json({ message: 'El nombre debe tener al menos 2 caracteres' })
-    }
-
-    // TODO: Validar email
-    if ( !validations.isValidEmail( email ) ) {
-        return res.status(400).json({ message: 'El email no es valido' });
-    }
-
-    const newUser = new User({
-        email: email.toLowerCase(),
-        password: bcrypt.hashSync( password ),
-        role: 'client',
-        name,
+  if (password.legth < 6)
+    return res
+      .status(400)
+      .json({ message: "La password debe de tener al menos 6 caracteres" });
+  if (name.legth < 3)
+    return res.status(400).json({
+      message: "El nombre debe de tener al menos 3 caracteres",
+    });
+  if (!isValidEmail(email))
+    return res.status(400).json({
+      message: "Ingrese un email valido",
     });
 
-    try {
-        await newUser.save({ validateBeforeSave: true });        
-    } catch (error) {
-        console.log(error);    
-        return res.status(500).json({ message: 'Revisar log del servidor' })
-    }
+  await connect();
+  const user = await User.findOne({ email });
 
-    const { _id } = newUser;
+  if (user)
+    return res
+      .status(400)
+      .json({ message: "Ya existe un usuario registrado con ese email" });
 
-    const token = jwt.singToken( _id, email);
+  const newUser = new User({
+    name,
+    email: email.toLowerCase(),
+    password: bcrypt.hashSync(password),
+    role: "client",
+  });
 
-    return res.status(200).json({        
-        token, //jwt
-        user:{
-            email,
-            role: 'client',
-            name
-        }        
-    })
-}
+  try {
+    await newUser.save({ validateBeforeSave: true });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error al crear el nuevo usuario",
+    });
+  }
+  const { _id, role } = newUser;
+  const token = singToken(_id, email);
+  await disconnect();
+
+  return res.status(200).json({
+    token,
+    user: {
+      email,
+      role: role,
+      name,
+    },
+  });
+};

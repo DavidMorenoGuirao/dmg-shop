@@ -1,64 +1,63 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import bcrypt from 'bcryptjs'
-import { db } from '../../../database'
-import { User } from '../../../models'
-import { jwt } from '../../../utils'
+import type { NextApiRequest, NextApiResponse } from "next";
+import { connect, disconnect } from "../../../database/db";
+import User from "../../../models/User";
+import bcrypt from "bcryptjs";
+import { Role } from "../../../interfaces/user";
+import { isValidToken, singToken } from "../../../utils/jwt";
 
 type Data =
-| { message: string }
-| {
-    token: string;
-    user: {
+  | {
+      message: string;
+    }
+  | {
+      token: string;
+      user: {
         email: string;
+        role: Role;
         name: string;
-        role: string;
+      };
     };
-}
 
-export default function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-    
-    switch ( req.method ) {
-        case 'GET':
-            return checkJWT(req, res)
-
-        default:
-            return res.status(400).json({ message: 'Bad request' })        
-    }    
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  switch (req.method) {
+    case "GET":
+      return checkJWT(req, res);
+    default:
+      return res.status(400).json({
+        message: "Bad request",
+      });
+  }
 }
 
 const checkJWT = async (req: NextApiRequest, res: NextApiResponse<Data>) => {
-    
-    const { token = '' } = req.cookies;
+  const { token = "" } = req.cookies;
+  let userId = "";
 
-    let userId = '';
+  try {
+    userId = await isValidToken(token);
+  } catch (error) {
+    return res.status(401).json({ message: "Token invalido" });
+  }
 
-    try {
-        userId = await jwt.isValidToken( token );
-    } catch (error) {
-        return res.status(401).json({ message: 'Token de autorización no es valido' })        
-    }
+  await connect();
+  const user = await User.findById(userId).lean();
+  await disconnect();
 
-    //Entonces, si tenemos un userId valido, nos conectamos a la bd:
-    await db.connect();
-    //busdcamos el usuario en la bd:
-    const user = await User.findById( userId ).lean();
-    //y nos desconectamos de la bd:
-    await db.disconnect();
+  if (!user) {
+    return res.status(404).json({ message: "No existe usuario con ese id" });
+  }
 
-    //si el usuario no existe enviamos este error:
-    if(!user) {
-        return res.status(400).json({ message: 'No existe el usuarrio con ese ID' })
-    }  
-    
-    //si el usuario existe, primero extraemos los datos que necesitemos del usuario:   
-    const { _id, email, role, name } = user;
-    //y entonces enviamos el token y el usuario:
-    return res.status(200).json({        
-        token: jwt.singToken( _id, email), //jwt
-        user:{
-            email,
-            role,
-            name,
-        }        
-    })
-}
+  const { _id, email, role, name } = user;
+
+  return res.status(200).json({
+    token: singToken(_id, email),
+    user: {
+      email,
+      role,
+      name,
+    },
+  });
+};

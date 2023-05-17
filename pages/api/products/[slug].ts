@@ -1,33 +1,44 @@
-import mongoose from 'mongoose';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { db } from '../../../database'; // se importa la instancia de la base de datos
-import { IProduct } from '../../../interfaces'; // se importa la interfaz de los productos
-import { Product } from '../../../models'; // se importa el modelo de los productos
+import type { NextApiRequest, NextApiResponse } from "next";
+import { connect, disconnect } from "../../../database/db";
+import { IProduct } from "../../../interfaces/products";
+import Product from "../../../models/Product";
 
-// Definimos el tipo de los datos que se van a devolver, que pueden ser un mensaje o un producto
-type Data = 
-| { message: string }
-| IProduct;
-
-export default function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-    switch (req.method) {
-        case 'GET':
-            return getProductsBySlug(req, res);
-        default:
-            return res.status(400).json({ message: 'Bad request' });
+type Data =
+  | {
+      message: string;
     }
+  | {
+      product: IProduct | null;
+    };
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  switch (req.method) {
+    case "GET":
+      return getProductBySlug(req, res);
+    default:
+      return res.status(400).json({ message: "Bad Request" });
+  }
 }
 
-// Función que busca un producto por su slug
-const getProductsBySlug = async(req: NextApiRequest, res: NextApiResponse<Data>) => {
-    await db.connect(); // Conecta a la base de datos
-    const { slug } = req.query; // Obtiene el slug del producto de los parámetros de la solicitud
-    const product = await Product.findOne({ slug }).lean(); // Busca el producto en la base de datos y lo asigna a la variable 'product'
-    await db.disconnect(); // Desconecta de la base de datos
+const getProductBySlug = async (
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) => {
+  const { slug } = req.query;
+  await connect();
+  let product = await Product.findOne({ slug }).lean();
+  await disconnect();
+  if (!product) {
+    return res.status(404).json({ message: "Producto no encontrado" });
+  }
 
-    if (!product) { // Si el producto no existe, devuelve un mensaje de error
-        return res.status(400).json({ message: 'Producto no existe' });
-    }
-
-    return res.status(200).json(product); // Devuelve el producto encontrado
-}
+  product.images = product.images.map((image) => {
+    return image.includes("http")
+      ? image
+      : `${process.env.HOST_NAME}/products/${image}`;
+  });
+  return res.status(200).json({ product });
+};

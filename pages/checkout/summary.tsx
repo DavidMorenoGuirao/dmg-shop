@@ -1,124 +1,101 @@
-import { useContext, useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import NextLink from "next/link";
+import React, { useContext, useEffect, useState } from "react";
+
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import Grid from "@mui/material/Grid";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import Grid from "@mui/material/Grid";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
-import { ShopLayout } from "../../components/layouts";
-import { CartList, OrderSummary } from "../../components/cart";
-import { CartContext } from "../../context";
-import { countries } from "../../utils";
-import Cookies from "js-cookie";
 
+import CartList from "../../components/cart/CartList";
+import OrderSummary from "../../components/cart/OrderSummary";
+import ShopLayout from "../../components/layouts/ShopLayout";
+import NextLink from "next/link";
+import { CartContext } from "../../context/cart/CartContext";
+import countries from "../../utils/countries";
+import Cookies from "js-cookie";
+import { useRouter } from "next/router";
+
+//
 const SummaryPage = () => {
   const router = useRouter();
+  const [isPosting, setIsPosting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const { shippingAddress, numberOfItems, createOrder } =
     useContext(CartContext);
 
-  const [isPosting, setIsPosting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  // useEffect(() => {
-  //   if ( Cookies.get( 'fistName' ) ){
-
-  //     router.push('/checkout/summary');
-  //   }
-  // }, [  ]);
-
   useEffect(() => {
     if (!Cookies.get("firstName")) {
-      router.push("/checkout/address");
+      router.push("/checkout/adress");
     }
   }, [router]);
 
-  const OnCreateOrder = async () => {
+  if (!shippingAddress) return <></>;
+
+  const onCreateOrder = async () => {
     setIsPosting(true);
-
-    //TODO: depende del resultado debo de navegar  o no
     const { hasError, message } = await createOrder();
-
     if (hasError) {
       setIsPosting(false);
       setErrorMessage(message);
       return;
     }
-
     router.replace(`/orders/${message}`);
   };
 
-  if (!shippingAddress) {
-    return <></>;
-  }
-
-  const {
-    firstName,
-    lastName,
-    address,
-    address2 = "",
-    city,
-    country,
-    phone,
-  } = shippingAddress;
-
   return (
-    <ShopLayout
-      title="Resumen de orden"
-      pageDescription={"Resumen de la orden"}
-    >
-      <Typography variant="h1" component="h1">
-        Resumen del pedido{" "}
+    <ShopLayout title="Resumen de orden" pageDescription="Resumen de la orden">
+      <Typography variant="h1" component="h1" sx={{ mb: 2 }}>
+        Resumen de la orden
       </Typography>
 
       <Grid container>
         <Grid item xs={12} sm={7}>
-          {/* CartList */}
-          <CartList editable={false} />
+          <CartList />
         </Grid>
+
         <Grid item xs={12} sm={5}>
           <Card className="summary-card">
             <CardContent>
-              <Typography variant="h2" component="h2">
+              <Typography variant="h2" sx={{ mb: 1 }}>
                 Resumen ({numberOfItems}{" "}
                 {numberOfItems === 1 ? "producto" : "productos"})
               </Typography>
-              <Divider sx={{ my: 1 }} />
+              <Divider />
 
-              <Box display="flex" justifyContent="space-between">
+              <Box display="flex" justifyContent="space-between" mt={1}>
                 <Typography variant="subtitle1">
-                  Dirección de entrega
+                  Direccion de entrega
                 </Typography>
-                <NextLink href="/checkout/address" passHref>
+                <NextLink href="/checkout/address" passHref legacyBehavior>
                   <Link underline="always">Editar</Link>
                 </NextLink>
               </Box>
 
               <Typography>
-                {firstName} {lastName}
+                {shippingAddress?.firstName} {shippingAddress?.lastName}
+              </Typography>
+              <Typography>{shippingAddress?.address}</Typography>
+              <Typography>
+                {shippingAddress?.city}, {shippingAddress?.zip}
               </Typography>
               <Typography>
-                {address} {address2 ? `, ${address2}` : ""}
+                {countries.find(({ code }) => code === shippingAddress?.country)
+                  ?.name || ""}
               </Typography>
-              <Typography>{city}</Typography>
-              <Typography>
-                {countries.find((c) => c.code === country)?.name}
-              </Typography>
-              <Typography>{phone}</Typography>
+              <Typography>{shippingAddress?.phone}</Typography>
 
-              <Divider sx={{ my: 1 }} />
+              <Divider sx={{ my: 2 }} />
 
               <Box display="flex" justifyContent="end">
-                <NextLink href="/cart" passHref>
+                <NextLink href="/cart" passHref legacyBehavior>
                   <Link underline="always">Editar</Link>
                 </NextLink>
               </Box>
 
-              {/* Order summary */}
               <OrderSummary />
 
               <Box sx={{ mt: 3 }} display="flex" flexDirection="column">
@@ -126,15 +103,14 @@ const SummaryPage = () => {
                   color="secondary"
                   className="circular-btn"
                   fullWidth
-                  onClick={OnCreateOrder}
+                  onClick={onCreateOrder}
                   disabled={isPosting}
                 >
                   Confirmar Orden
                 </Button>
-
                 <Chip
                   color="error"
-                  label="El total no cuadra con el monto de la orden"
+                  label={errorMessage}
                   sx={{ display: errorMessage ? "flex" : "none", mt: 2 }}
                 />
               </Box>
@@ -145,5 +121,48 @@ const SummaryPage = () => {
     </ShopLayout>
   );
 };
+
+// Vamos a verificar si estamos logeados
+// Esta es la forma en como podemos verificar si ya estamos logeados con SSR
+// Ahora verificamos esto con un middleware
+// export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+//   // Autenticacion personalizada
+//   // const { token = '' } = req.cookies;
+//   // let tokenIsValid = false;
+
+//   // try {
+//   //   await isValidToken(token);
+//   //   tokenIsValid = true;
+//   // } catch (error) {
+//   //   tokenIsValid = false;
+//   // }
+
+//   // if (!token || !tokenIsValid) {
+//   //   return {
+//   //     redirect: {
+//   //       destination: '/auth/login?p=/checkout/address',
+//   //       permanent: false,
+//   //     },
+//   //   };
+//   // }
+
+//   const session = await getToken({
+//     req,
+//     secret: process.env.NEXTAUTH_SECRET || '',
+//   });
+
+//   if (!session) {
+//     return {
+//       redirect: {
+//         destination: '/auth/login?p=/checkout/summary',
+//         permanent: false,
+//       },
+//     };
+//   }
+
+//   return {
+//     props: {},
+//   };
+// };
 
 export default SummaryPage;

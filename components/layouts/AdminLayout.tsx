@@ -1,18 +1,17 @@
 import { PropsWithChildren, FC } from "react";
-
 import { SideMenu } from "../ui";
-import { AdminNavbar } from "../admin";
+import AdminNavbar from "../admin/AdminNavbar";
 import Box from "@mui/material/Box";
-
 import Typography from "@mui/material/Typography";
 
+//
 interface Props {
   title: string;
   subTitle: string;
   icon?: JSX.Element;
 }
 
-export const AdminLayout: FC<PropsWithChildren<Props>> = ({
+const AdminLayout: FC<PropsWithChildren<Props>> = ({
   children,
   title,
   subTitle,
@@ -47,3 +46,5 @@ export const AdminLayout: FC<PropsWithChildren<Props>> = ({
     </>
   );
 };
+
+export default AdminLayout;

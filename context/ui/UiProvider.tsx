@@ -1,36 +1,27 @@
-import { FC, ReactNode, useReducer } from 'react';
-import { UiContext, uiReducer } from './';
-
+import { FC, useReducer, PropsWithChildren } from "react";
+import { UiContext } from "./UiContext";
+import { uiReducer } from "./uiReducer";
 
 export interface UiState {
-    isMenuOpen: boolean;
+  isMenuOpen: boolean;
 }
-
 
 const UI_INITIAL_STATE: UiState = {
-    isMenuOpen: false
-}
+  isMenuOpen: false,
+};
 
-interface Props {
-    children: ReactNode;
-}
+const UiProvider: FC<PropsWithChildren> = ({ children }) => {
+  const [state, dispatch] = useReducer(uiReducer, UI_INITIAL_STATE);
 
-export const UiProvider:FC<Props> = ({ children }) => {
+  const toggleSideMenu = () => {
+    dispatch({ type: "[UI] - ToggleMenu" });
+  };
 
-    const [state, dispatch] = useReducer( uiReducer, UI_INITIAL_STATE );
+  return (
+    <UiContext.Provider value={{ ...state, toggleSideMenu }}>
+      {children}
+    </UiContext.Provider>
+  );
+};
 
-    const toggleSidebar = () => {
-        dispatch({ type: 'UI - ToggleMenu' });
-    }
-
-    return (
-        <UiContext.Provider value={{
-            ...state,
-
-            //Methods
-            toggleSidebar,
-        }}>
-            { children }
-        </UiContext.Provider>
-    );
-}
+export default UiProvider;
