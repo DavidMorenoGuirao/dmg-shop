@@ -13,13 +13,14 @@ import { IUser } from "../../../interfaces/user";
 
 //
 const columns: GridColDef[] = [
-  { field: "id", headerName: "Order ID", width: 250 },
-  { field: "email", headerName: "Correo", width: 250 },
-  { field: "name", headerName: "Nombre Completo", width: 300 },
-  { field: "total", headerName: "Monto total", width: 200 },
+  { field: "id", headerName: "Order ID", width: 230 },
+  { field: "email", headerName: "Correo", width: 200 },
+  { field: "name", headerName: "Nombre Completo", width: 250 },
+  { field: "total", headerName: "Monto total", width: 150 },
   {
     field: "isPaid",
     headerName: "Pagada",
+    width: 110,
     // @ts-ignore
     renderCell: ({ row }: GridValueGetterParams) => {
       return row.isPaid ? (
@@ -31,9 +32,9 @@ const columns: GridColDef[] = [
   },
   {
     field: "inStock",
-    headerName: "No. Productos",
+    headerName: "Productos",
     align: "center",
-    width: 150,
+    width: 110,
   },
   {
     field: "check",
@@ -47,7 +48,7 @@ const columns: GridColDef[] = [
       );
     },
   },
-  { field: "createdAt", headerName: "Creada en", width: 300 },
+  { field: "createdAt", headerName: "Creada en", width: 228 },
 ];
 
 const OrdersPage: NextPage = () => {

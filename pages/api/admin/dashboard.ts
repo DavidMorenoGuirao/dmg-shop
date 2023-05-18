@@ -12,7 +12,7 @@ type Data =
       notPaidOrders: number;
       numberOfClients: number;
       numberOfProducts: number;
-      productsWithNotInventory: number;
+      productsWithNoInventory: number;
       lowInventory: number;
     }
   | { message: string };
@@ -37,12 +37,12 @@ export default async function handler(
     notPaidOrders,
     numberOfClients,
     numberOfProducts,
-    productsWithNotInventory,
+    productsWithNoInventory,
     lowInventory,
   ] = await Promise.all([
     Order.count(),
-    Order.find({ paid: true }).count(),
-    Order.find({ paid: false }).count(),
+    Order.find({ isPaid: true }).count(),
+    Order.find({ isPaid: false }).count(),
     User.find({ role: "client" }).count(),
     Product.count(),
     Product.find({ inStock: 0 }).count(),
@@ -56,7 +56,7 @@ export default async function handler(
     notPaidOrders,
     numberOfClients,
     numberOfProducts,
-    productsWithNotInventory,
+    productsWithNoInventory,
     lowInventory,
   });
 }

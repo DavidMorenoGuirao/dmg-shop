@@ -119,8 +119,8 @@ export default function handler(
 // Función para obtener el token de autenticación de PayPal
 const getPaypalBearerToken = async (): Promise<string | null> => {
   // Obtenemos las credenciales de la API de PayPal del archivo de entorno
-  const PAYPAL_CLIENT = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID2;
-  const PAYPAL_SECRET = process.env.PAYPAL_SECRET2;
+  const PAYPAL_CLIENT = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+  const PAYPAL_SECRET = process.env.PAYPAL_SECRET;
 
   // Codificamos las credenciales en base64 y creamos un cuerpo de solicitud con el grant_type requerido
   const base64Token = Buffer.from(

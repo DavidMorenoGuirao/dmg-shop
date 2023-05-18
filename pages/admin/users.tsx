@@ -54,17 +54,17 @@ const UsersPage: NextPage = () => {
     {
       field: "email",
       headerName: "Correo",
-      width: 250,
+      width: 333,
     },
     {
       field: "name",
       headerName: "Nombre completo",
-      width: 300,
+      width: 666,
     },
     {
       field: "role",
       headerName: "Rol",
-      width: 300,
+      width: 333,
       // @ts-ignore
       renderCell: ({ row }: GridValueGetterParams) => {
         return (
@@ -72,7 +72,11 @@ const UsersPage: NextPage = () => {
             value={row.role}
             label="Rol"
             onChange={(e) => onRoleUpdated(row.id, e.target.value)}
-            sx={{ width: 300 }}
+            sx={{
+              width: "100%",
+              boxShadow: "none",
+              ".MuiOutlinedInput-notchedOutline": { border: 0 },
+            }}
           >
             {validRoles.map((role) => (
               <MenuItem value={role.value} key={role.value}>
