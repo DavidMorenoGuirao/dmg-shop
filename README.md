@@ -51,19 +51,19 @@ docker-compose up -d
   mongodb://localhost:27017/dmgdb
 ```
 
-## Pre-requisitos 📋
+## Pre-requisitos
 
 - Node
 - Yarn
 
-## Ejecuta la app en " Desarrollo " ⚙️
+## Ejecuta la app en " Desarrollo "
 
 ```
 1.- yarn install
 2.- yarn dev
 ```
 
-## Ejecuta la app en " Producción " 🚀
+## Ejecuta la app en " Producción "
 
 ```
 1.- yarn install
@@ -71,11 +71,7 @@ docker-compose up -d
 3.- yarn start
 ```
 
-## Tecnologias usadas 📦
-
-- [Vercel](https://vercel.com/) - Vercel
-
-_Tools I've used in this project_
+## Tecnologias usadas
 
 - Yarn
 - React
