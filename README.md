@@ -83,7 +83,3 @@ docker-compose up -d
 ## Realizado por ✒️
 
 - **David Moreno** - _FullStack-Developer_ - [DavidMG](https://github.com/DavidMorenoGuirao)
-
----
-
-⌨️ with ❤️ by [IsmaelJDz7](https://github.com/IsmaelJDz) 😊
