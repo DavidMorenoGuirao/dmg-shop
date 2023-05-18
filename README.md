@@ -1,4 +1,4 @@
-# DMG-SHOP NextJS Ecommerce
+# DmgShop NextJS Ecommerce
 
 ![Captura de la app](public/products/1623735-00-A_0_2000.jpg)
 
@@ -35,7 +35,7 @@ Llamara:
     http://localhost:3000/api/seed
 ```
 
-# Next.js Teslo App
+# Next.js DmgShop App
 
 para ejecutar en local necesita la base de datos local
 
