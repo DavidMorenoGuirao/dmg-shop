@@ -51,20 +51,6 @@ docker-compose up -d
   mongodb://localhost:27017/dmgdb
 ```
 
-## llenar la base de datos para la prueba con datos ficticios
-
-```
-  http://localhost:3000/api/seed
-```
-
-- HTML5
-- CSS3
-- JavaScript,
-- React,
-- Next,
-- Context API
-- Material
-
 ## Pre-requisitos 📋
 
 - Node
